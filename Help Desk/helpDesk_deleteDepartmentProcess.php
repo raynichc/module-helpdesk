@@ -22,7 +22,7 @@ use Gibbon\Module\HelpDesk\Domain\DepartmentPermissionsGateway;
 
 require_once '../../gibbon.php';
 
-$URL = $gibbon->session->get('absoluteURL') . '/index.php?q=/modules/' . $gibbon->session->get('module');
+$URL = $session->get('absoluteURL') . '/index.php?q=/modules/' . $session->get('module');
 
 if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manageDepartments.php')) {
     $URL .= '/issues_view.php&return=error0';
@@ -47,9 +47,6 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
         header("Location: {$URL}");
         exit();
     }
-    
-    //TODO: create an if error for this
-    $departmentPermissionsGateway->deleteWhere(['departmentID' => $departmentID]);
 
     $URL .= '&return=success0';
     header("Location: {$URL}");

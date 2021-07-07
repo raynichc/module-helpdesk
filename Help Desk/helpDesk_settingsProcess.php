@@ -17,13 +17,14 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+use Gibbon\Domain\System\LogGateway;
 use Gibbon\Domain\System\SettingGateway;
 
 require_once '../../gibbon.php';
 
 require_once './moduleFunctions.php';
 
-$URL = $gibbon->session->get('absoluteURL') . '/index.php?q=/modules/' . $gibbon->session->get('module');
+$URL = $session->get('absoluteURL') . '/index.php?q=/modules/' . $session->get('module');
 
 if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_settings.php')) {
     //Fail 0
@@ -79,8 +80,8 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_settin
         }
     }
 
-    $gibbonModuleID = getModuleIDFromName($connection2, 'Help Desk');
-    setLog($connection2, $gibbon->session->get('gibbonSchoolYearID'), $gibbonModuleID, $gibbon->session->get('gibbonPersonID'), 'Help Desk Settings Edited', null);
+    $logGateway = $container->get(LogGateway::class);
+    $logGateway->addLog($session->get('gibbonSchoolYearID'), 'Help Desk', $session->get('gibbonPersonID'), 'Help Desk Settings Edited');
 
     $return = 'success0';
     if ($dbFail) {

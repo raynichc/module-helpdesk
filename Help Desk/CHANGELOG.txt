@@ -1,5 +1,30 @@
 CHANGELOG
 =========
+v2.0.02
+-------
+Refactored session variables and null coalesce.
+
+v2.0.01
+-------
+Fixed notification URLs not being set in some cases.
+
+v2.0.00
+-------
+Replaced getLog calls with LogGateway::getLog
+Replaced setLog calls with LogGateway::addLog
+Replaced setNotifiaction with NotificationSender calls
+
+v1.5.02
+-------
+Fixed notifications going to wrong technicians.
+
+v1.5.01
+-------
+Fixed install bug relating to default tech groups.
+
+v1.5.00
+-------
+Allowed Technician Groups to have multiple departments.
 
 v1.4.20
 -------
@@ -251,7 +276,7 @@ v0.1.04
 -------
 Fixed an issue where the gibbonPersonID would not be set when creating an issue in issues_create.php.
 Fixed an issues where issues_discuss_view.php would not display properly.
-Fixed multiple misc issues. 
+Fixed multiple misc issues.
 
 v0.1.03
 -------

@@ -29,16 +29,12 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
     $page->addError(__('You do not have access to this action.'));
 } else {
     //Proceed!
-    if (isset($_GET['return'])) {
-        returnProcess($guid, $_GET['return'], null, null);
-    }
-
     $settingGateway = $container->get(SettingGateway::class);
     if ($settingGateway->getSettingByScope('Help Desk', 'simpleCategories')) {
         $page->addWarning(__('Simple Categories are currently enabled. Please disabled them in Help Desk Settings in order to Manage Departments.'));
     } else {
         $departmentGateway = $container->get(DepartmentGateway::class);
-        $subcategoryGateway = $container->get(SubcategoryGateway::class);   
+        $subcategoryGateway = $container->get(SubcategoryGateway::class);
 
         $departmentData = $departmentGateway->selectDepartments()->toDataSet();
 
@@ -49,12 +45,12 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
             }
             return implode(', ', array_column($categories, 'subcategoryName'));
         };
-        
+
         $table = DataTable::create('departments');
         $table->setTitle('Departments');
 
         $table->addHeaderAction('add', __('Add'))
-                ->setURL('/modules/' . $gibbon->session->get('module') . '/helpDesk_createDepartment.php');
+                ->setURL('/modules/' . $session->get('module') . '/helpDesk_createDepartment.php');
 
         $table->addColumn('departmentName', __('Department Name'));
 
@@ -64,14 +60,14 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
 
         $table->addActionColumn()
                 ->addParam('departmentID')
-                ->format(function ($department, $actions) use ($gibbon, $departmentData) {
+                ->format(function ($department, $actions) use ($session, $departmentData) {
                     $actions->addAction('edit', __('Edit'))
-                            ->setURL('/modules/' . $gibbon->session->get('module') . '/helpDesk_editDepartment.php');
+                            ->setURL('/modules/' . $session->get('module') . '/helpDesk_editDepartment.php');
                     $actions->addAction('delete', __('Delete'))
                             ->modalWindow()
-                            ->setURL('/modules/' . $gibbon->session->get('module') . '/helpDesk_deleteDepartment.php');
+                            ->setURL('/modules/' . $session->get('module') . '/helpDesk_deleteDepartment.php');
                 });
-        
+
         echo $table->render($departmentData);
     }
 }

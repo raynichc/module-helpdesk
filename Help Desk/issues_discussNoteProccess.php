@@ -25,7 +25,7 @@ use Gibbon\Module\HelpDesk\Domain\TechnicianGateway;
 
 require_once '../../gibbon.php';
 
-$URL = $gibbon->session->get('absoluteURL') . '/index.php?q=/modules/' . $gibbon->session->get('module');
+$URL = $session->get('absoluteURL') . '/index.php?q=/modules/' . $session->get('module');
 
 if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/issues_view.php')) {
     $URL .= '/issues_view.php&return=error0';
@@ -43,7 +43,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/issues_view.php
         exit();
     }
 
-    $gibbonPersonID = $gibbon->session->get('gibbonPersonID');
+    $gibbonPersonID = $session->get('gibbonPersonID');
 
     $technicianGateway = $container->get(TechnicianGateway::class);
     $techGroupGateway = $container->get(TechGroupGateway::class);
@@ -67,25 +67,16 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/issues_view.php
             exit();
         }
 
-        try {
-            $gibbonModuleID = getModuleIDFromName($connection2, 'Help Desk');
-            if ($gibbonModuleID == null) {
-                throw new PDOException('Invalid gibbonModuleID.');
-            }
+        $issueNoteGateway = $container->get(IssueNoteGateway::class);
 
-            $issueNoteGateway = $container->get(IssueNoteGateway::class);
-
-            $issueNoteID = $issueNoteGateway->insert([
-                'issueID' => $issueID,
-                'note' => $note,
-                'timestamp' => date('Y-m-d H:i:s'),
-                'gibbonPersonID' => $gibbonPersonID
-            ]);
-            
-            if ($issueNoteID === false) {
-                throw new PDOException('Could not insert note.');
-            }
-        } catch (PDOException $e) {
+        $issueNoteID = $issueNoteGateway->insert([
+            'issueID' => $issueID,
+            'note' => $note,
+            'timestamp' => date('Y-m-d H:i:s'),
+            'gibbonPersonID' => $gibbonPersonID
+        ]);
+        
+        if ($issueNoteID === false) {
             $URL .= '&return=error2';
             header("Location: {$URL}");
             exit();

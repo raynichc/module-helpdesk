@@ -29,10 +29,6 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
     $page->addError(__('You do not have access to this action.'));
 } else {
     //Proceed!
-    if (isset($_GET['return'])) {
-        returnProcess($guid, $_GET['return'], null, null);
-    }
-
     $technicianID = $_GET['technicianID'] ?? '';
 
     $technicianGateway = $container->get(TechnicianGateway::class);
@@ -43,8 +39,8 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
     } else {
         $sql = 'SELECT groupID as value, groupName as name FROM helpDeskTechGroups ORDER BY helpDeskTechGroups.groupID ASC';
 
-        $form = Form::create('setTechGroup',  $gibbon->session->get('absoluteURL') . '/modules/' . $gibbon->session->get('module') . '/helpDesk_setTechGroupProcess.php?technicianID=' . $technicianID, 'post');
-        $form->addHiddenValue('address', $gibbon->session->get('address'));
+        $form = Form::create('setTechGroup',  $session->get('absoluteURL') . '/modules/' . $session->get('module') . '/helpDesk_setTechGroupProcess.php?technicianID=' . $technicianID, 'post');
+        $form->addHiddenValue('address', $session->get('address'));
 
         $row = $form->addRow();
             $row->addLabel('group', __('Technician Group'));

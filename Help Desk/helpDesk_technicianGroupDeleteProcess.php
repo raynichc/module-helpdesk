@@ -17,12 +17,13 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+use Gibbon\Domain\System\LogGateway;
 use Gibbon\Module\HelpDesk\Domain\TechGroupGateway;
 use Gibbon\Module\HelpDesk\Domain\TechnicianGateway;
 
 require_once '../../gibbon.php';
 
-$URL = $gibbon->session->get('absoluteURL') . '/index.php?q=/modules/Help Desk';
+$URL = $session->get('absoluteURL') . '/index.php?q=/modules/Help Desk';
 
 if (isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manageTechnicianGroup.php')==false) {
     //Fail 0
@@ -61,9 +62,8 @@ if (isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manageT
         exit();
     }
 
-    $gibbonModuleID = getModuleIDFromName($connection2, 'Help Desk');
-
-    setLog($connection2, $gibbon->session->get('gibbonSchoolYearID'), $gibbonModuleID, $gibbon->session->get('gibbonPersonID'), 'Technician Group Removed', ['newGroupID' => $newGroupID], null);
+    $logGateway = $container->get(LogGateway::class);
+    $logGateway->addLog($session->get('gibbonSchoolYearID'), 'Help Desk', $session->get('gibbonPersonID'), 'Technician Group Removed', ['newGroupID' => $newGroupID]);
 
     //Success 0
     $URL .= '&return=success0';

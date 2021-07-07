@@ -17,11 +17,12 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+use Gibbon\Domain\System\LogGateway;
 use Gibbon\Module\HelpDesk\Domain\TechGroupGateway;
 
 require_once '../../gibbon.php';
 
-$URL = $gibbon->session->get('absoluteURL') . '/index.php?q=/modules/' . $gibbon->session->get('module') . '/helpDesk_createTechnicianGroup.php';
+$URL = $session->get('absoluteURL') . '/index.php?q=/modules/' . $session->get('module') . '/helpDesk_createTechnicianGroup.php';
 
 if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manageTechnicianGroup.php')) {
     $URL .= '&return=error0';
@@ -36,35 +37,28 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
         header("Location: {$URL}");
         exit();
     } else {
-        //Write to database
+        $data = ['groupName' => $groupName];
 
-        try {
-            $gibbonModuleID = getModuleIDFromName($connection2, 'Help Desk');
-            if ($gibbonModuleID == null) {
-                throw new PDOException('Invalid gibbonModuleID.');
-            }
+        $techGroupGateway = $container->get(TechGroupGateway::class);
 
-            $data = ['groupName' => $groupName];
+        //Check if name is unique
+        if (!$techGroupGateway->unique($data, ['groupName'])) {
+            $URL .= '&return=error7';
+            header("Location: {$URL}");
+            exit();
+        }
 
-            $techGroupGateway = $container->get(TechGroupGateway::class);
-
-            if (!$techGroupGateway->unique($data, ['groupName'])) {
-                $URL .= '&return=error7';
-                header("Location: {$URL}");
-                exit();
-            }
-
-            $groupID = $techGroupGateway->insert($data);
-            if ($groupID === false) {
-                throw new PDOException('Could not insert group.');
-            }
-        } catch (PDOException $e) {
+        //Insert group
+        $groupID = $techGroupGateway->insert($data);
+        if ($groupID === false) {
             $URL .= '&return=error2';
             header("Location: {$URL}");
             exit();
         }
 
-        setLog($connection2, $gibbon->session->get('gibbonSchoolYearID'), $gibbonModuleID, $gibbon->session->get('gibbonPersonID'), 'Technician Group Added', ['groupID' => $groupID], null);
+        //Log
+        $logGateway = $container->get(LogGateway::class);
+        $logGateway->addLog($session->get('gibbonSchoolYearID'), 'Help Desk', $session->get('gibbonPersonID'), 'Technician Group Added', ['groupID' => $groupID]);
 
         //Success 0
         $URL .= "&groupID=$groupID&return=success0";

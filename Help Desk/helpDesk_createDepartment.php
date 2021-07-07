@@ -30,21 +30,17 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
     $page->addError(__('You do not have access to this action.'));
 } else {
     //Proceed!
-    if (isset($_GET['return'])) {
-        $editLink = null;
-        if (isset($_GET['departmentID'])) {
-            $editLink = $gibbon->session->get('absoluteURL') . '/index.php?q=/modules/' . $gibbon->session->get('module') . '/helpDesk_editDepartment.php&departmentID=' . $_GET['departmentID'];
-        }
-        returnProcess($guid, $_GET['return'], $editLink, null);
+    if (isset($_GET['departmentID'])) {
+        $page->return->setEditLink($session->get('absoluteURL') . '/index.php?q=/modules/' . $session->get('module') . '/helpDesk_editDepartment.php&departmentID=' . $_GET['departmentID']);
     }
 
-    $form = Form::create('createDepartment',  $gibbon->session->get('absoluteURL') . '/modules/' . $gibbon->session->get('module') . '/helpDesk_createDepartmentProcess.php', 'post');
-    $form->addHiddenValue('address', $gibbon->session->get('address'));
+    $form = Form::create('createDepartment',  $session->get('absoluteURL') . '/modules/' . $session->get('module') . '/helpDesk_createDepartmentProcess.php', 'post');
+    $form->addHiddenValue('address', $session->get('address'));
 
     $row = $form->addRow();
         $row->addLabel('departmentName', __('Department Name'));
         $row->addTextField('departmentName')
-            ->uniqueField('./modules/' . $gibbon->session->get('module') . '/helpDesk_createDepartmentAjax.php')
+            ->uniqueField('./modules/' . $session->get('module') . '/helpDesk_createDepartmentAjax.php')
             ->maxLength(55)
             ->required();
             
@@ -68,6 +64,5 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
         $row->addSubmit();
 
     echo $form->getOutput();
-
 }
 ?>

@@ -17,6 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+use Gibbon\Comms\NotificationSender;
+use Gibbon\Domain\System\LogGateway;
+use Gibbon\Domain\System\NotificationGateway;
 use Gibbon\Module\HelpDesk\Domain\IssueGateway;
 use Gibbon\Module\HelpDesk\Domain\TechGroupGateway;
 use Gibbon\Module\HelpDesk\Domain\TechnicianGateway;
@@ -26,7 +29,7 @@ $_POST['address'] = '/modules/Help Desk/issues_reincarnateProcess.php';
 
 require_once '../../gibbon.php';
 
-$URL = $gibbon->session->get('absoluteURL') . '/index.php?q=/modules/' . $gibbon->session->get('module');
+$URL = $session->get('absoluteURL') . '/index.php?q=/modules/' . $session->get('module');
 
 if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/issues_view.php')) {
     //Fail 0
@@ -45,7 +48,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/issues_view.php
         exit();
     }
 
-    $gibbonPersonID = $gibbon->session->get('gibbonPersonID');
+    $gibbonPersonID = $session->get('gibbonPersonID');
 
     $techGroupGateway = $container->get(TechGroupGateway::class);
     
@@ -59,33 +62,30 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/issues_view.php
         }
 
         //Write to database
-        try {
-            $gibbonModuleID = getModuleIDFromName($connection2, 'Help Desk');
-            if ($gibbonModuleID == null) {
-                throw new PDOException('Invalid gibbonModuleID.');
-            }
-
-            if (!$issueGateway->update($issueID, ['status' => $status])) {
-                throw new PDOException('Failed to update Issue');
-            }
-        } catch (PDOException $e) {
+        if (!$issueGateway->update($issueID, ['status' => $status])) {
             $URL .= '&return=error2';
             header("Location: {$URL}");
             exit();
         }
 
-        $message = 'Issue #';
-        $message .= $issueID;
-        $message .= ' (' . $issue['issueName'] . ') has been reincarnated.';
+
+        //Send Notification
+        $notificationGateway = $container->get(NotificationGateway::class);
+        $notificationSender = new NotificationSender($notificationGateway, $session);
+
+        $message = __('Issue #') . $issueID . ' (' . $issue['issueName'] . ') ' . __('has been reincarnated.');
 
         $personIDs = $issueGateway->getPeopleInvolved($issueID);
 
         foreach ($personIDs as $personID) {
             if ($personID != $gibbonPersonID) {
-                setNotification($connection2, $guid, $personID, $message, 'Help Desk', "/index.php?q=/modules/Help Desk/issues_discussView.php&issueID=$issueID");
+                $notificationSender->addNotification($personID, $message, 'Help Desk', '/index.php?q=/modules/Help Desk/issues_discussView.php&issueID=' . $issueID);
             } 
         }
+        
+        $notificationSender->sendNotifications();
 
+        //Log
         $array = ['issueID' => $issueID];
 
         $technicianGateway = $container->get(TechnicianGateway::class);
@@ -94,7 +94,8 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/issues_view.php
             $array['technicianID'] = $technician->fetch()['technicianID'];
         }
 
-        setLog($connection2,$gibbon->session->get('gibbonSchoolYearID'), $gibbonModuleID, $gibbonPersonID, 'Issue Reincarnated', $array, null);
+        $logGateway = $container->get(LogGateway::class);
+        $logGateway->addLog($session->get('gibbonSchoolYearID'), 'Help Desk', $gibbonPersonID, 'Issue Reincarnated', $array);
 
         //Success 0
         $URL .= '&return=success0';

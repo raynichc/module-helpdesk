@@ -22,6 +22,8 @@ use Gibbon\Forms\Form;
 use Gibbon\Services\Format;
 use Gibbon\Tables\DataTable;
 
+require_once __DIR__ . '/moduleFunctions.php';
+
 $page->breadcrumbs->add(__('Statistics'));
 
 if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_statistics.php')) {
@@ -35,8 +37,8 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_statis
     $endDate = isset($_GET['endDate']) ? Format::dateConvert($_GET['endDate']) : date('Y-m-d');
 
     //Filter
-    $form = Form::create('helpDeskStatistics', $gibbon->session->get('absoluteURL') . '/index.php', 'get');
-    $form->addHiddenValue('q', '/modules/' . $gibbon->session->get('module') . '/helpdesk_statistics.php');
+    $form = Form::create('helpDeskStatistics', $session->get('absoluteURL') . '/index.php', 'get');
+    $form->addHiddenValue('q', '/modules/' . $session->get('module') . '/helpDesk_statistics.php');
     $form->setTitle('Filter');
 
     $row = $form->addRow();
@@ -64,59 +66,32 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_statis
     $criteria = $logGateway->newQueryCriteria()
         ->filterBy('module', 'Help Desk')
         ->filterBy('startDate', $startDate)
-        ->filterBy('endDate', date('Y-m-d 23:59:59', strtotime($endDate)));
+        ->filterBy('endDate', date('Y-m-d 23:59:59', strtotime($endDate)))
+        ->sortBy('timestamp', 'DESC');
 
-    $criteria->addFilterRules([
-        'module' => function ($query, $module) {
-            return $query
-                ->where('gibbonModule.name = :module')
-                ->bindValue('module', $module);
-        },
-        'startDate' => function ($query, $startDate) {
-            return $query
-                ->where('timestamp >= :startDate')
-                ->bindValue('startDate', $startDate);
-        },
-        'endDate' => function ($query, $endDate) {
-            return $query
-                ->where('timestamp <= :endDate')
-                ->bindValue('endDate', $endDate);
-        },
-    ]);
+    $logs = $logGateway->queryLogs($criteria, $session->get('gibbonSchoolYearID'));
 
-    $logs = $logGateway->queryLogs($criteria, $gibbon->session->get('gibbonSchoolYearID'));
-
-    $stats = [];
-
-    foreach ($logs as $log) {
-        $stats[$log['title']] = ($stats[$log['title']] ?? 0) + 1;
-    }
-    ksort($stats);
-
-    $display = [];
-    foreach ($stats as $key => $value) {
-        array_push($display, ['name' => $key, 'value' => $value]);
-    }
+    $stats = statsOverview($logs);
 
     //Stat Table
     $table = DataTable::create('statistics');
     $table->setTitle('Statistics');
-    
+
     $data = [
-        'q' => '/modules/' . $gibbon->session->get('module') . '/helpDesk_statisticsDetail.php',
-        'title' => '', 
-        'startDate' => $startDate, 
+        'q' => '/modules/' . $session->get('module') . '/helpDesk_statisticsDetail.php',
+        'title' => '',
+        'startDate' => $startDate,
         'endDate' => $endDate,
     ];
 
     $table->addColumn('name', __('Name'))
-            ->format(function ($row) use ($gibbon, $data) {
-                $data['title'] = $row['name'];
-                return Format::link($gibbon->session->get('absoluteURL') . '/index.php?' . http_build_query($data), $row['name']);
-            });
+        ->format(function ($row) use ($session, $data) {
+            $data['title'] = $row['name'];
+            return Format::link($session->get('absoluteURL') . '/index.php?' . http_build_query($data), $row['name']);
+        });
 
     $table->addColumn('value', __('Value'));
 
-    echo $table->render($display);
+    echo $table->render($stats);
 }
 ?>

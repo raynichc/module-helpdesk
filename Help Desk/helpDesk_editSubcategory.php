@@ -18,6 +18,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 use Gibbon\Forms\Form;
+use Gibbon\Module\HelpDesk\Domain\DepartmentGateway;
 use Gibbon\Module\HelpDesk\Domain\SubcategoryGateway;
 
 if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manageDepartments.php')) {
@@ -27,14 +28,16 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
     $departmentID = $_GET['departmentID'] ?? '';
     $subcategoryID = $_GET['subcategoryID'] ?? '';
 
+    $departmentGateway = $container->get(DepartmentGateway::class);
+
     $subcategoryGateway = $container->get(SubcategoryGateway::class);
     $subcategory = $subcategoryGateway->getByID($subcategoryID);
 
-    if (empty($departmentID) || empty($subcategoryID) || empty($subcategory) || $subcategory['departmentID'] != $departmentID) {
+    if (empty($departmentID) || !$departmentGateway->exists($departmentID) || empty($subcategory) || $subcategory['departmentID'] != $departmentID) {
         $page->addError(__('Invalid Data Provided'));
     } else {
-        $form = Form::create('createSubcategory',  $gibbon->session->get('absoluteURL') . '/modules/' . $gibbon->session->get('module') . '/helpDesk_editSubcategoryProcess.php', 'post');
-        $form->addHiddenValue('address', $gibbon->session->get('address'));
+        $form = Form::create('createSubcategory',  $session->get('absoluteURL') . '/modules/' . $session->get('module') . '/helpDesk_editSubcategoryProcess.php', 'post');
+        $form->addHiddenValue('address', $session->get('address'));
         $form->addHiddenValue('departmentID', $departmentID);
         $form->addHiddenValue('subcategoryID', $subcategoryID);
 
@@ -42,7 +45,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
             $row->addLabel('subcategoryName', __('Subcategory Name'));
             $row->addTextField('subcategoryName')
                 ->required()
-                ->uniqueField('./modules/' . $gibbon->session->get('module') . '/helpDesk_createSubcategoryAjax.php', ['departmentID' => $departmentID, 'currentSubcategoryName' => $subcategory['subcategoryName']])
+                ->uniqueField('./modules/' . $session->get('module') . '/helpDesk_createSubcategoryAjax.php', ['departmentID' => $departmentID, 'currentSubcategoryName' => $subcategory['subcategoryName']])
                 ->maxLength(55)
                 ->setValue($subcategory['subcategoryName']);
 

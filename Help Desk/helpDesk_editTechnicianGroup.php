@@ -17,10 +17,12 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+use Gibbon\Domain\System\SettingGateway;
 use Gibbon\Forms\Form;
 use Gibbon\Services\Format;
-use Gibbon\Module\HelpDesk\Domain\TechGroupGateway;
 use Gibbon\Module\HelpDesk\Domain\DepartmentGateway;
+use Gibbon\Module\HelpDesk\Domain\GroupDepartmentGateway;
+use Gibbon\Module\HelpDesk\Domain\TechGroupGateway;
 
 $page->breadcrumbs
     ->add(__('Manage Technician Groups'), 'helpDesk_manageTechnicianGroup.php')
@@ -31,20 +33,19 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
     $page->addError(__('You do not have access to this action.'));
 } else {
     //Proceed!
-    if (isset($_GET['return'])) {
-        returnProcess($guid, $_GET['return'], null, null);
-    }
-
     $groupID = $_GET['groupID'] ?? '';
     
     $techGroupGateway = $container->get(TechGroupGateway::class);
     $values = $techGroupGateway->getByID($groupID);
 
-    if (empty($groupID) || empty($values)) {
+    if (empty($values)) {
         $page->addError(__('No Group Selected.'));
     } else {
         $departmentGateway = $container->get(DepartmentGateway::class);
         $departmentData = $departmentGateway->selectDepartments()->toDataSet();
+
+        $groupDepartmentGateway = $container->get(GroupDepartmentGateway::class);
+        $groupDepartments = $groupDepartmentGateway->selectGroupDepartments($groupID)->toDataSet()->getColumn('departmentID');
 
         $statuses = [
             'All'       =>  __('All'),
@@ -53,8 +54,8 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
             'Pending'   =>  __('Pending')
         ];
 
-        $form = Form::create('editTechnicianGroup', $gibbon->session->get('absoluteURL') . '/modules/' . $gibbon->session->get('module') . '/helpDesk_editTechnicianGroupProcess.php?groupID=' . $groupID , 'post');
-        $form->addHiddenValue('address', $gibbon->session->get('address'));
+        $form = Form::create('editTechnicianGroup', $session->get('absoluteURL') . '/modules/' . $session->get('module') . '/helpDesk_editTechnicianGroupProcess.php?groupID=' . $groupID , 'post');
+        $form->addHiddenValue('address', $session->get('address'));
         $form->setTitle($values['groupName']);
 
         $form->addRow()->addHeading(__('Settings'));
@@ -62,18 +63,20 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
         $row = $form->addRow();
             $row->addLabel('groupName', __('Group Name'));
             $row->addTextField('groupName')
-                ->uniqueField('./modules/' . $gibbon->session->get('module') . '/helpDesk_createTechnicianGroupAjax.php', ['currentGroupName' => $values['groupName']])
+                ->uniqueField('./modules/' . $session->get('module') . '/helpDesk_createTechnicianGroupAjax.php', ['currentGroupName' => $values['groupName']])
                 ->required()
                 ->setValue($values['groupName']);
 
-        if (count($departmentData) > 0) {
+        $settingGateway = $container->get(SettingGateway::class);
+        if (count($departmentData) > 0 && !$settingGateway->getSettingByScope('Help Desk', 'simpleCategories')) {
             $row = $form->addRow();
                 $row->addLabel('departmentID', __('Department'))
                     ->description(__('Assigning a Department to a Tech Group will only allow techs in the group to work on issues in the department.'));
                 $row->addSelect('departmentID')
                     ->fromDataset($departmentData, 'departmentID', 'departmentName')
+                    ->selectMultiple()
                     ->placeholder()
-                    ->selected($values['departmentID']);
+                    ->selected($groupDepartments);
         }
 
         $form->addRow()->addHeading(__('Permissons'));

@@ -23,7 +23,7 @@ $description="A virtual help desk module for Gibbon.";
 $entryURL="issues_view.php";
 $type="Additional";
 $category="Other";
-$version="1.4.20";
+$version="2.0.02";
 $author="Ray Clark, Ashton Power & Adrien Tremblay";
 $url="https://github.com/GibbonEdu/module-helpDesk";
 
@@ -85,7 +85,6 @@ $moduleTables[$tables++]="CREATE TABLE `helpDeskTechGroups` (
     `fullAccess` boolean DEFAULT 0,
     `reassignIssue` boolean DEFAULT 0,
     `reincarnateIssue` boolean DEFAULT 1,
-    `departmentID` int(4) UNSIGNED ZEROFILL DEFAULT NULL,
     PRIMARY KEY (`groupID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
@@ -103,6 +102,13 @@ $moduleTables[$tables++]="CREATE TABLE `helpDeskDepartmentPermissions` (
     PRIMARY KEY (`departmentPermissionsID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
+$moduleTables[$tables++]="CREATE TABLE `helpDeskGroupDepartment` (
+    `groupDepartmentID` int(4) UNSIGNED ZEROFILL NOT NULL AUTO_INCREMENT,
+    `groupID` int(4) UNSIGNED ZEROFILL NOT NULL,
+    `departmentID` int(4) UNSIGNED ZEROFILL NOT NULL,
+    PRIMARY KEY (`groupDepartmentID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
 $moduleTables[$tables++]="CREATE TABLE `helpDeskSubcategories` (
     `subcategoryID` int(4) unsigned zerofill NOT NULL AUTO_INCREMENT,
     `departmentID` int(4) unsigned zerofill NOT NULL,
@@ -110,10 +116,10 @@ $moduleTables[$tables++]="CREATE TABLE `helpDeskSubcategories` (
     PRIMARY KEY (`subcategoryID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-$moduleTables[$tables++]="INSERT INTO `helpDeskTechGroups` (`groupID`, `groupName`, `viewIssue`, `viewIssueStatus`, `assignIssue`, `acceptIssue`, `resolveIssue`, `createIssueForOther`, `fullAccess`, `reassignIssue`, `reincarnateIssue`, `departmentID`)
+$moduleTables[$tables++]="INSERT INTO `helpDeskTechGroups` (`groupID`, `groupName`, `viewIssue`, `viewIssueStatus`, `assignIssue`, `acceptIssue`, `resolveIssue`, `createIssueForOther`, `fullAccess`, `reassignIssue`, `reincarnateIssue`)
     VALUES
-    (NULL, 'Head Technician', 1, 'All', 1, 1, 1, 1, 1, 1, 1, NULL),
-    (NULL, 'Technician', 1, 'All', 0, 1, 1, 1, 0, 0, 1, NULL)";
+    (NULL, 'Head Technician', 1, 'All', 1, 1, 1, 1, 1, 1, 1),
+    (NULL, 'Technician', 1, 'All', 0, 1, 1, 1, 0, 0, 1)";
 
 $moduleTables[$tables++]="INSERT INTO `gibbonSetting` (`gibbonSettingID`, `scope`, `name`, `nameDisplay`, `description`, `value`)
     VALUES
